@@ -20,12 +20,77 @@ interface StopArea {
   stop_area: object;
 }
 
+interface Departure {
+  display_informations: {
+    code: string;
+    color: string;
+    commercial_mode: string;
+    description: string;
+    direction: string;
+    equipments: string[];
+    headsign: string;
+    label: string;
+    links: {
+      category: string;
+      id: string;
+      internal: boolean;
+      rel: string;
+      templated: boolean;
+      type: string;
+    };
+    name: string;
+    network: string;
+    physical_mode: string;
+    text_color: string;
+    trip_short_name: string;
+  };
+  links: { id: string; type: string };
+  routes: object;
+  stop_date_time: {
+    additional_informations: [];
+    arrival_date_time: string;
+    base_arrival_date_time: string;
+    base_departure_date_time: string;
+    data_freshness: string;
+    departure_date_time: string;
+  };
+  stop_point: object;
+}
+
+interface ResponseNativiaDeparture {
+  context: object;
+  departures: Departure[];
+  disruptions: [];
+  exceptions: [];
+  feed_publishers: [];
+  links: [];
+  notes: [];
+  origins: string[];
+  pagination: object;
+  terminus: string[];
+}
+
 export default function HomeScreen() {
   const [modalAddTrainVisible, setModalAddTrainVisible] = useState(false);
   const [modalSelectStopAreaVisible, setModalSelectStopAreaVisible] =
     useState(false);
   const [town, setTown] = useState("");
   const [stopAreas, setStopAreas] = useState<StopArea[]>([]);
+  const [selectedStopArea, setSelectedStopArea] = useState<StopArea>();
+  const [departures, setDepartures] = useState<ResponseNativiaDeparture>();
+  const [selectedDeparture, setSelectedDeparture] = useState<Departure>();
+
+  const convertNativiaDate = (nativiaDate: string) => {
+    const year: string =
+      nativiaDate[0] + nativiaDate[1] + nativiaDate[2] + nativiaDate[3];
+
+    const month: string = nativiaDate[4] + nativiaDate[5];
+    const day: string = nativiaDate[6] + nativiaDate[7];
+    const hour: string = nativiaDate[9] + nativiaDate[10];
+    const minutes: string = nativiaDate[11] + nativiaDate[12];
+
+    return `${day}/${month} - ${hour}:${minutes}`;
+  };
 
   const fetchTrainStation = async (query: string) => {
     try {
@@ -41,6 +106,24 @@ export default function HomeScreen() {
         );
         setStopAreas(filtered);
         setModalSelectStopAreaVisible(true);
+      }
+    } catch (e) {
+      console.error(e);
+      setModalAddTrainVisible(false);
+      setModalSelectStopAreaVisible(false);
+      ToastAndroid.show("An error has been occured", ToastAndroid.SHORT);
+    }
+  };
+  const fetchDeparture = async () => {
+    try {
+      const apiKey = await AsyncStorage.getItem("api-key");
+      if (apiKey !== null) {
+        const response = await axios.get(
+          `https://api.sncf.com/v1/coverage/sncf/stop_areas/${selectedStopArea?.id}/departures?`,
+          { headers: { Authorization: apiKey } }
+        );
+
+        setDepartures(response.data);
       }
     } catch (e) {
       console.error(e);
@@ -81,6 +164,39 @@ export default function HomeScreen() {
             title="Close"
             onPress={() => setModalAddTrainVisible(!modalAddTrainVisible)}
           />
+          <Text>Selected stop area: {selectedStopArea?.name}</Text>
+          <Button title="Fetch departures" onPress={fetchDeparture}></Button>
+
+          <FlatList
+            data={departures?.departures}
+            renderItem={({ item }) => {
+              const backgroundColor =
+                item.display_informations.trip_short_name ===
+                selectedDeparture?.display_informations.trip_short_name
+                  ? "green"
+                  : "white";
+              return (
+                <Text
+                  style={{ marginBottom: 8, backgroundColor: backgroundColor }}
+                  onPress={() => {
+                    setSelectedDeparture(item);
+                  }}
+                >
+                  {convertNativiaDate(item.stop_date_time.departure_date_time)}{" "}
+                  {item.display_informations.direction}
+                </Text>
+              );
+            }}
+            ListEmptyComponent={
+              <Text style={{ color: "gray" }}>No departure today</Text>
+            }
+          />
+          <Button
+            title="Validate choice"
+            onPress={() => {
+              setModalAddTrainVisible(false);
+            }}
+          />
         </View>
       </Modal>
 
@@ -94,15 +210,26 @@ export default function HomeScreen() {
         <View>
           <FlatList
             data={stopAreas}
-            renderItem={({ item }) => (
-              <Text style={{ marginBottom: 8 }}>{item.name}</Text>
-            )}
+            renderItem={({ item }) => {
+              const backgroundColor =
+                item.id === selectedStopArea?.id ? "green" : "white";
+              return (
+                <Text
+                  style={{ marginBottom: 8, backgroundColor: backgroundColor }}
+                  onPress={() => {
+                    setSelectedStopArea(item);
+                  }}
+                >
+                  {item.name}
+                </Text>
+              );
+            }}
             ListEmptyComponent={
               <Text style={{ color: "gray" }}>No gare station found</Text>
             }
           />
           <Button
-            title="Close"
+            title="Validate choice"
             onPress={() =>
               setModalSelectStopAreaVisible(!modalSelectStopAreaVisible)
             }
