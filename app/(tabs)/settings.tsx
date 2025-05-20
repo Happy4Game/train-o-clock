@@ -14,7 +14,7 @@ export default function SettingScreen() {
   const [, setIsApiKeyFetched] = React.useState(false);
 
   useEffect(() => {
-    async function fetchData() {
+    async function fetchApiKey() {
       try {
         const value = await AsyncStorage.getItem("api-key");
         if (value !== null) {
@@ -26,7 +26,7 @@ export default function SettingScreen() {
         ToastAndroid.show("An error has been occured", ToastAndroid.SHORT);
       }
     }
-    fetchData();
+    fetchApiKey();
   }, [setIsApiKeyFetched]);
 
   const saveApiKeyInLocalStorage = async () => {
