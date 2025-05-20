@@ -80,6 +80,43 @@ export default function HomeScreen() {
   const [departures, setDepartures] = useState<ResponseNativiaDeparture>();
   const [selectedDeparture, setSelectedDeparture] = useState<Departure>();
 
+  const clearAllTempValues = () => {
+    setStopAreas([]);
+    setTown("");
+    setSelectedStopArea(undefined);
+    setDepartures(undefined);
+    setSelectedDeparture(undefined);
+  };
+
+  const saveNewTrainInLocalStorage = async (
+    departure: Departure | undefined
+  ) => {
+    try {
+      if (departure === undefined) throw "Departure is null";
+      const departuresListAsyncStorage = await AsyncStorage.getItem(
+        "list-departures"
+      );
+      let departuresList: Departure[];
+      if (departuresListAsyncStorage !== null) {
+        departuresList = JSON.parse(departuresListAsyncStorage);
+      } else {
+        departuresList = [];
+      }
+      console.log(departuresList);
+      departuresList.push(departure);
+      await AsyncStorage.setItem(
+        "list-departures",
+        JSON.stringify(departuresList)
+      );
+      ToastAndroid.show("New departure has been added", ToastAndroid.SHORT);
+      setModalAddTrainVisible(false);
+      clearAllTempValues();
+    } catch (e) {
+      console.error(e);
+      ToastAndroid.show("An error has been occured", ToastAndroid.SHORT);
+    }
+  };
+
   const convertNativiaDate = (nativiaDate: string) => {
     const year: string =
       nativiaDate[0] + nativiaDate[1] + nativiaDate[2] + nativiaDate[3];
@@ -140,6 +177,18 @@ export default function HomeScreen() {
         onPress={() => setModalAddTrainVisible(!modalAddTrainVisible)}
       />
 
+      <Button
+        title="Clear Cache"
+        onPress={async () => {
+          try {
+            AsyncStorage.removeItem("list-departures");
+            ToastAndroid.show("Departure list cleared", ToastAndroid.SHORT);
+          } catch (error) {
+            console.error(error);
+            ToastAndroid.show("An error has occured", ToastAndroid.SHORT);
+          }
+        }}
+      />
       <Modal
         visible={modalAddTrainVisible}
         animationType="slide"
@@ -159,10 +208,6 @@ export default function HomeScreen() {
             onPress={() => {
               fetchTrainStation(town);
             }}
-          />
-          <Button
-            title="Close"
-            onPress={() => setModalAddTrainVisible(!modalAddTrainVisible)}
           />
           <Text>Selected stop area: {selectedStopArea?.name}</Text>
           <Button title="Fetch departures" onPress={fetchDeparture}></Button>
@@ -194,10 +239,15 @@ export default function HomeScreen() {
           <Button
             title="Validate choice"
             onPress={() => {
-              setModalAddTrainVisible(false);
+              saveNewTrainInLocalStorage(selectedDeparture);
             }}
           />
         </View>
+
+        <Button
+          title="Close"
+          onPress={() => setModalAddTrainVisible(!modalAddTrainVisible)}
+        />
       </Modal>
 
       <Modal
