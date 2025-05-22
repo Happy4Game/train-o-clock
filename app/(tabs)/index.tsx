@@ -10,7 +10,7 @@ import {
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
-import { useState } from "react";
+import React, { useEffect, useState } from "react";
 
 interface StopArea {
   id: string;
@@ -79,6 +79,26 @@ export default function HomeScreen() {
   const [selectedStopArea, setSelectedStopArea] = useState<StopArea>();
   const [departures, setDepartures] = useState<ResponseNativiaDeparture>();
   const [selectedDeparture, setSelectedDeparture] = useState<Departure>();
+
+  const [, setIsLocalDeparturesLoaded] = React.useState(false);
+  const [localDepartures, setLocalDepartures] = useState<Departure[]>();
+
+  useEffect(() => {
+    async function fetchLocalDepartures() {
+      try {
+        const value = await AsyncStorage.getItem("list-departures");
+        if (value !== null) {
+          setIsLocalDeparturesLoaded(true);
+          setLocalDepartures(JSON.parse(value));
+        }
+        ToastAndroid.show("Local departures loaded", ToastAndroid.SHORT);
+      } catch (e) {
+        console.error(e);
+        ToastAndroid.show("An error has been occured", ToastAndroid.SHORT);
+      }
+    }
+    fetchLocalDepartures();
+  }, [setIsLocalDeparturesLoaded]);
 
   const clearAllTempValues = () => {
     setStopAreas([]);
@@ -189,6 +209,20 @@ export default function HomeScreen() {
           }
         }}
       />
+
+      <FlatList
+        data={localDepartures}
+        renderItem={({ item }) => (
+          <Text style={{ color: "white" }}>
+            {item.display_informations.direction}
+            {`\nBase departure : ${convertNativiaDate(
+              item.stop_date_time.base_departure_date_time
+            )}\nDeparture : ${convertNativiaDate(
+              item.stop_date_time.departure_date_time
+            )}`}{" "}
+          </Text>
+        )}
+      ></FlatList>
       <Modal
         visible={modalAddTrainVisible}
         animationType="slide"
