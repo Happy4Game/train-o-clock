@@ -83,20 +83,21 @@ export default function HomeScreen() {
   const [, setIsLocalDeparturesLoaded] = React.useState(false);
   const [localDepartures, setLocalDepartures] = useState<Departure[]>();
 
-  useEffect(() => {
-    async function fetchLocalDepartures() {
-      try {
-        const value = await AsyncStorage.getItem("list-departures");
-        if (value !== null) {
-          setIsLocalDeparturesLoaded(true);
-          setLocalDepartures(JSON.parse(value));
-        }
-        ToastAndroid.show("Local departures loaded", ToastAndroid.SHORT);
-      } catch (e) {
-        console.error(e);
-        ToastAndroid.show("An error has been occured", ToastAndroid.SHORT);
+  async function fetchLocalDepartures() {
+    try {
+      const value = await AsyncStorage.getItem("list-departures");
+      if (value !== null) {
+        setIsLocalDeparturesLoaded(true);
+        setLocalDepartures(JSON.parse(value));
       }
+      ToastAndroid.show("Local departures loaded", ToastAndroid.SHORT);
+    } catch (e) {
+      console.error(e);
+      ToastAndroid.show("An error has been occured", ToastAndroid.SHORT);
     }
+  }
+
+  useEffect(() => {
     fetchLocalDepartures();
   }, [setIsLocalDeparturesLoaded]);
 
@@ -122,7 +123,6 @@ export default function HomeScreen() {
       } else {
         departuresList = [];
       }
-      console.log(departuresList);
       departuresList.push(departure);
       await AsyncStorage.setItem(
         "list-departures",
@@ -131,6 +131,39 @@ export default function HomeScreen() {
       ToastAndroid.show("New departure has been added", ToastAndroid.SHORT);
       setModalAddTrainVisible(false);
       clearAllTempValues();
+      fetchLocalDepartures();
+    } catch (e) {
+      console.error(e);
+      ToastAndroid.show("An error has been occured", ToastAndroid.SHORT);
+    }
+  };
+
+  const deleteDepartureLocalStorage = async (departure: Departure) => {
+    try {
+      if (departure === undefined) throw "Departure is null";
+      const departuresListAsyncStorage = await AsyncStorage.getItem(
+        "list-departures"
+      );
+      let departuresList: Departure[];
+      if (departuresListAsyncStorage !== null) {
+        departuresList = JSON.parse(departuresListAsyncStorage);
+      } else {
+        departuresList = [];
+      }
+      const newDepartureList = departuresList.splice(
+        departuresList.indexOf(departure),
+        1
+      );
+
+      await AsyncStorage.setItem(
+        "list-departures",
+        JSON.stringify(newDepartureList)
+      );
+      ToastAndroid.show("New departure has been added", ToastAndroid.SHORT);
+      setModalAddTrainVisible(false);
+      setLocalDepartures(newDepartureList);
+      clearAllTempValues();
+      fetchLocalDepartures();
     } catch (e) {
       console.error(e);
       ToastAndroid.show("An error has been occured", ToastAndroid.SHORT);
@@ -201,7 +234,8 @@ export default function HomeScreen() {
         title="Clear Cache"
         onPress={async () => {
           try {
-            AsyncStorage.removeItem("list-departures");
+            await AsyncStorage.removeItem("list-departures");
+            setLocalDepartures(undefined);
             ToastAndroid.show("Departure list cleared", ToastAndroid.SHORT);
           } catch (error) {
             console.error(error);
@@ -213,14 +247,21 @@ export default function HomeScreen() {
       <FlatList
         data={localDepartures}
         renderItem={({ item }) => (
-          <Text style={{ color: "white" }}>
-            {item.display_informations.direction}
-            {`\nBase departure : ${convertNativiaDate(
-              item.stop_date_time.base_departure_date_time
-            )}\nDeparture : ${convertNativiaDate(
-              item.stop_date_time.departure_date_time
-            )}`}{" "}
-          </Text>
+          <>
+            <Text style={{ color: "white" }}>
+              {item.display_informations.direction}
+              {`\nBase departure : ${convertNativiaDate(
+                item.stop_date_time.base_departure_date_time
+              )}\nDeparture : ${convertNativiaDate(
+                item.stop_date_time.departure_date_time
+              )}`}{" "}
+            </Text>
+            <Button
+              title="X"
+              color={"red"}
+              onPress={() => deleteDepartureLocalStorage(item)}
+            />
+          </>
         )}
       ></FlatList>
       <Modal
