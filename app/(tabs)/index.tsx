@@ -99,6 +99,13 @@ export default function HomeScreen() {
       } else {
         departuresList = [];
       }
+      if (departuresList.indexOf(departure) === -1) {
+        ToastAndroid.show(
+          "Departure not found in local storage",
+          ToastAndroid.SHORT
+        );
+        return;
+      }
       const newDepartureList = departuresList.splice(
         departuresList.indexOf(departure),
         1
