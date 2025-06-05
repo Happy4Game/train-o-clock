@@ -8,67 +8,16 @@ import {
   View,
 } from "react-native";
 
+import { TrainInfoItem } from "@/components/TrainInfoItem";
+import {
+  convertNativiaDate,
+  Departure,
+  ResponseNativiaDeparture,
+  StopArea,
+} from "@/scripts/utils";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 import React, { useEffect, useState } from "react";
-
-interface StopArea {
-  id: string;
-  embedded_type: string;
-  name: string;
-  quality: number;
-  stop_area: object;
-}
-
-interface Departure {
-  display_informations: {
-    code: string;
-    color: string;
-    commercial_mode: string;
-    description: string;
-    direction: string;
-    equipments: string[];
-    headsign: string;
-    label: string;
-    links: {
-      category: string;
-      id: string;
-      internal: boolean;
-      rel: string;
-      templated: boolean;
-      type: string;
-    };
-    name: string;
-    network: string;
-    physical_mode: string;
-    text_color: string;
-    trip_short_name: string;
-  };
-  links: { id: string; type: string };
-  routes: object;
-  stop_date_time: {
-    additional_informations: [];
-    arrival_date_time: string;
-    base_arrival_date_time: string;
-    base_departure_date_time: string;
-    data_freshness: string;
-    departure_date_time: string;
-  };
-  stop_point: object;
-}
-
-interface ResponseNativiaDeparture {
-  context: object;
-  departures: Departure[];
-  disruptions: [];
-  exceptions: [];
-  feed_publishers: [];
-  links: [];
-  notes: [];
-  origins: string[];
-  pagination: object;
-  terminus: string[];
-}
 
 export default function HomeScreen() {
   const [modalAddTrainVisible, setModalAddTrainVisible] = useState(false);
@@ -170,18 +119,6 @@ export default function HomeScreen() {
     }
   };
 
-  const convertNativiaDate = (nativiaDate: string) => {
-    const year: string =
-      nativiaDate[0] + nativiaDate[1] + nativiaDate[2] + nativiaDate[3];
-
-    const month: string = nativiaDate[4] + nativiaDate[5];
-    const day: string = nativiaDate[6] + nativiaDate[7];
-    const hour: string = nativiaDate[9] + nativiaDate[10];
-    const minutes: string = nativiaDate[11] + nativiaDate[12];
-
-    return `${day}/${month} - ${hour}:${minutes}`;
-  };
-
   const fetchTrainStation = async (query: string) => {
     try {
       const apiKey = await AsyncStorage.getItem("api-key");
@@ -247,21 +184,10 @@ export default function HomeScreen() {
       <FlatList
         data={localDepartures}
         renderItem={({ item }) => (
-          <>
-            <Text style={{ color: "white" }}>
-              {item.display_informations.direction}
-              {`\nBase departure : ${convertNativiaDate(
-                item.stop_date_time.base_departure_date_time
-              )}\nDeparture : ${convertNativiaDate(
-                item.stop_date_time.departure_date_time
-              )}`}{" "}
-            </Text>
-            <Button
-              title="X"
-              color={"red"}
-              onPress={() => deleteDepartureLocalStorage(item)}
-            />
-          </>
+          <TrainInfoItem
+            localDeparture={item}
+            deleteDeparture={() => deleteDepartureLocalStorage(item)}
+          ></TrainInfoItem>
         )}
       ></FlatList>
       <Modal
