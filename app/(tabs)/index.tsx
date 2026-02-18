@@ -59,13 +59,12 @@ export default function HomeScreen() {
   };
 
   const saveNewTrainInLocalStorage = async (
-    departure: Departure | undefined
+    departure: Departure | undefined,
   ) => {
     try {
       if (departure === undefined) throw "Departure is null";
-      const departuresListAsyncStorage = await AsyncStorage.getItem(
-        "list-departures"
-      );
+      const departuresListAsyncStorage =
+        await AsyncStorage.getItem("list-departures");
       let departuresList: Departure[];
       if (departuresListAsyncStorage !== null) {
         departuresList = JSON.parse(departuresListAsyncStorage);
@@ -75,7 +74,7 @@ export default function HomeScreen() {
       departuresList.push(departure);
       await AsyncStorage.setItem(
         "list-departures",
-        JSON.stringify(departuresList)
+        JSON.stringify(departuresList),
       );
       ToastAndroid.show("New departure has been added", ToastAndroid.SHORT);
       setModalAddTrainVisible(false);
@@ -90,9 +89,8 @@ export default function HomeScreen() {
   const deleteDepartureLocalStorage = async (departure: Departure) => {
     try {
       if (departure === undefined) throw "Departure is null";
-      const departuresListAsyncStorage = await AsyncStorage.getItem(
-        "list-departures"
-      );
+      const departuresListAsyncStorage =
+        await AsyncStorage.getItem("list-departures");
       let departuresList: Departure[];
       if (departuresListAsyncStorage !== null) {
         departuresList = JSON.parse(departuresListAsyncStorage);
@@ -102,18 +100,18 @@ export default function HomeScreen() {
       if (departuresList.indexOf(departure) === -1) {
         ToastAndroid.show(
           "Departure not found in local storage",
-          ToastAndroid.SHORT
+          ToastAndroid.SHORT,
         );
         return;
       }
       const newDepartureList = departuresList.splice(
         departuresList.indexOf(departure),
-        1
+        1,
       );
 
       await AsyncStorage.setItem(
         "list-departures",
-        JSON.stringify(newDepartureList)
+        JSON.stringify(newDepartureList),
       );
       ToastAndroid.show("New departure has been added", ToastAndroid.SHORT);
       setModalAddTrainVisible(false);
@@ -132,11 +130,11 @@ export default function HomeScreen() {
       if (apiKey !== null) {
         const response = await axios.get(
           `https://api.sncf.com/v1/coverage/sncf/places?display_geojson=false&q=${query}&`,
-          { headers: { Authorization: apiKey } }
+          { headers: { Authorization: apiKey } },
         );
 
         const filtered = response.data?.places.filter((place: StopArea) =>
-          place.id.startsWith("stop_area:")
+          place.id.startsWith("stop_area:"),
         );
         setStopAreas(filtered);
         setModalSelectStopAreaVisible(true);
@@ -154,7 +152,7 @@ export default function HomeScreen() {
       if (apiKey !== null) {
         const response = await axios.get(
           `https://api.sncf.com/v1/coverage/sncf/stop_areas/${selectedStopArea?.id}/departures?`,
-          { headers: { Authorization: apiKey } }
+          { headers: { Authorization: apiKey } },
         );
 
         setDepartures(response.data);
