@@ -66,6 +66,7 @@ export default function SettingScreen() {
         placeholder="Put your api key"
         onChangeText={onChangeApiTextField}
         value={apiTextField}
+        editable={false}
       ></CustomTextInput>
       <Button title="Save" color="green" onPress={saveApiKeyInLocalStorage} />
     </ParallaxScrollView>
